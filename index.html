@@ -52,6 +52,8 @@ tr.done:hover td{background:rgba(120,200,140,.30)}
 .nm{color:var(--blue);text-decoration:none;font-weight:600;font-size:15px;letter-spacing:-.01em}
 .nm:hover{text-decoration:underline}
 .sub{display:block;font-size:12px;color:var(--txt2);font-weight:400;margin-top:3px}
+a.sub.addr{text-decoration:none;cursor:pointer}
+a.sub.addr:hover{color:var(--blue);text-decoration:underline}
 .lks{display:block;margin-top:5px;font-size:12px}
 .lks a{color:var(--blue);text-decoration:none;font-weight:600;cursor:pointer}
 .lks a:hover{text-decoration:underline}
@@ -60,6 +62,10 @@ tr.done:hover td{background:rgba(120,200,140,.30)}
 .call:hover{filter:brightness(1.06)}
 .call:active{filter:brightness(.92)}
 .nolink{color:var(--txt3);font-size:13px}
+.copylic{color:var(--blue);text-decoration:none;font-weight:600;cursor:pointer;white-space:nowrap;font-variant-numeric:tabular-nums}
+.copylic:hover{text-decoration:underline}
+.notescell{vertical-align:middle}
+.namecell{vertical-align:top}
 select.interest{padding:8px 9px;font-size:13px;color:var(--txt);border:1px solid var(--sep2);border-radius:9px;background:#fff;min-width:140px}
 select.interest:focus{outline:none;border-color:var(--blue)}
 select.interest.i-yes{background:rgba(26,143,60,.12);border-color:rgba(26,143,60,.45);color:#157a32}
@@ -76,7 +82,23 @@ textarea.notes.justsaved{border-color:var(--green);box-shadow:0 0 0 3px rgba(26,
 #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#1d1d1f;color:#fff;padding:11px 20px;border-radius:11px;font-size:14px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20;box-shadow:0 8px 30px rgba(0,0,0,.25)}
 #toast.show{opacity:1}
 .progress{font-size:13px;color:var(--txt2);font-weight:600}
-@media(max-width:680px){th:nth-child(5),td:nth-child(5){min-width:140px}}
+@media(max-width:640px){
+ .wrap{padding:12px 10px 44px}
+ thead{display:none}
+ table{display:block;border:none;background:transparent;box-shadow:none;border-radius:0}
+ tbody{display:block}
+ tr{display:block;background:var(--card);border:1px solid #d3d7e0;border-radius:13px;margin-bottom:12px;padding:11px 14px;box-shadow:0 2px 12px rgba(28,38,64,.09)}
+ tr.done{background:rgba(120,200,140,.16)}
+ tr:nth-child(even) td{background:transparent}
+ td{display:flex;align-items:center;gap:10px;border:none!important;padding:6px 0;background:transparent!important}
+ td[data-label]::before{content:attr(data-label);flex:0 0 78px;font-size:11px;color:var(--txt2);font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+ td.namecell{display:block;padding:2px 0 9px;border-bottom:1px solid var(--sep)!important;margin-bottom:4px}
+ td.notescell{display:block}
+ td.notescell::before{display:block;margin:0 0 5px}
+ textarea.notes{width:100%}
+ .nm{font-size:17px}
+ .sub{font-size:12.5px}
+}
 </style></head><body>
 
 <div class="bar">
@@ -89,6 +111,7 @@ textarea.notes.justsaved{border-color:var(--green);box-shadow:0 0 0 3px rgba(26,
 <th style="width:46px" class="sortable" data-k="done" title="Sort by contacted"></th>
 <th class="sortable" data-k="name">Business Name</th>
 <th class="sortable" data-k="tel">Phone</th>
+<th class="sortable" data-k="lic">License #</th>
 <th class="sortable" data-k="interest">Interest</th>
 <th data-k="notes">Notes</th>
 </tr></thead><tbody id="b"></tbody></table></div>
@@ -151,17 +174,17 @@ function render(){
  b.innerHTML=pageRows.map(r=>{
   const s=st(r.id);
   const detail=[r.addr,r.city,r.zip].filter(Boolean).join(' · ');
-  const licLink=r.lic?`<span class="sep">|</span><a class="copylic" data-lic="${esc(r.lic)}" title="Copy license #${esc(r.lic)}">📋 Lic #${esc(r.lic)}</a>`:'';
-  const links=`<span class="lks"><a target="_blank" href="${mapsUrl(r)}">📍 Maps</a>${licLink}</span>`;
-  const nameCell=`<a class="nm" target="_blank" href="${gSearch(r)}" title="Web-search ${esc(r.name)}">${esc(r.name)}</a><span class="sub">${esc(detail)}</span>${links}`;
+  const licCell=r.lic?`<a class="copylic" data-lic="${esc(r.lic)}" title="Copy license #${esc(r.lic)}">#${esc(r.lic)}</a>`:'<span class="nolink">—</span>';
+  const nameCell=`<a class="nm" target="_blank" href="${gSearch(r)}" title="Web-search ${esc(r.name)}">${esc(r.name)}</a>`+(detail?`<a class="sub addr" target="_blank" href="${mapsUrl(r)}" title="Open in Maps">📍 ${esc(detail)}</a>`:'');
   const phone=r.tel?`<a class="call" href="tel:${r.tel}">☎ ${esc(r.phone)}</a>`:'<span class="nolink">no phone</span>';
   const opts=INT_OPTS.map(o=>`<option ${o===s.interest?'selected':''} ${o===''?'value=""':''}>${o||'—'}</option>`).join('');
   return `<tr class="${s.done?'done':''}" data-id="${esc(r.id)}">
-   <td class="mid"><input type="checkbox" class="chk" ${s.done?'checked':''} data-act="done"></td>
-   <td>${nameCell}</td>
-   <td class="mid">${phone}</td>
-   <td class="mid"><select class="interest ${intClass(s.interest)}" data-act="interest">${opts}</select></td>
-   <td class="mid"><div class="notewrap"><textarea class="notes" data-act="notes" rows="1" placeholder="Notes…">${esc(s.notes)}</textarea><span class="savedtick">saved ✓</span></div></td>
+   <td class="mid" data-label="Called"><input type="checkbox" class="chk" ${s.done?'checked':''} data-act="done"></td>
+   <td class="namecell">${nameCell}</td>
+   <td class="mid" data-label="Phone">${phone}</td>
+   <td class="mid" data-label="License">${licCell}</td>
+   <td class="mid" data-label="Interest"><select class="interest ${intClass(s.interest)}" data-act="interest">${opts}</select></td>
+   <td class="notescell" data-label="Notes"><div class="notewrap"><textarea class="notes" data-act="notes" rows="1" placeholder="Notes…">${esc(s.notes)}</textarea><span class="savedtick">saved ✓</span></div></td>
   </tr>`;
  }).join('');
  b.querySelectorAll('textarea.notes').forEach(autosize);
@@ -216,6 +239,7 @@ function applySort(){
   let x,y;
   if(sortK==='done'){x=st(a.id).done?1:0;y=st(b.id).done?1:0;}
   else if(sortK==='interest'){x=st(a.id).interest;y=st(b.id).interest;}
+  else if(sortK==='lic'){x=parseInt(a.lic,10)||0;y=parseInt(b.lic,10)||0;}
   else{x=(a[sortK]||'').toString().toLowerCase();y=(b[sortK]||'').toString().toLowerCase();}
   return x<y?-1:x>y?1:0;
  });
